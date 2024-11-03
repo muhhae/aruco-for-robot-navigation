@@ -2,9 +2,11 @@ import cv2
 import numpy as np
 from scipy.spatial.transform import Rotation
 import math
+import os
+
+os.environ["QT_QPA_PLATFORM"] = "xcb"
 
 aruco_size = 0.05
-
 camera_calibration_filename = "./calibration_chessboard.yaml"
 
 
@@ -76,12 +78,12 @@ def main():
                 roll_x = math.degrees(roll_x)
                 pitch_y = math.degrees(pitch_y)
                 yaw_z = math.degrees(yaw_z)
-                print("transform_translation_x: {}".format(transform_translation_x))
-                print("transform_translation_y: {}".format(transform_translation_y))
-                print("transform_translation_z: {}".format(transform_translation_z))
-                print("roll_x: {}".format(roll_x))
-                print("pitch_y: {}".format(pitch_y))
-                print("yaw_z: {}".format(yaw_z))
+                print(f"transform_translation_x: {transform_translation_x}")
+                print(f"transform_translation_y: {transform_translation_y}")
+                print(f"transform_translation_z: {transform_translation_z}")
+                print(f"roll_x: {roll_x}")
+                print(f"pitch_y: {pitch_y}")
+                print(f"yaw_z: {yaw_z}")
                 print()
 
                 cv2.drawFrameAxes(frame, mtx, dist, rvecs[i], tvecs[i], 0.05)
@@ -97,5 +99,4 @@ def main():
 
 
 if __name__ == "__main__":
-    print(__doc__)
     main()

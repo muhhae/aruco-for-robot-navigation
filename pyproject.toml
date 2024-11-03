@@ -1,0 +1,11 @@
+[project]
+name = "aruco-for-robot-navigation"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12.7"
+dependencies = [
+    "opencv-contrib-python>=4.10.0.84",
+    "opencv-python>=4.10.0.84",
+    "scipy>=1.14.1",
+]
