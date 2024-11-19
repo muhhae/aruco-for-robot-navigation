@@ -1,6 +1,10 @@
 import cv2
 import numpy as np
 import glob
+import os
+
+os.environ["QT_QPA_PLATFORM"] = "xcb"
+
 
 square_count_x = 10
 square_count_y = 7
