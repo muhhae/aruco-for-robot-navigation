@@ -87,7 +87,7 @@ class ArucoDetector:
 
             aruco_transforms = self.Detect(frame)
             if aruco_transforms is not None:
-                self.GetPosition(aruco_transforms)
+                # self.GetPosition(aruco_transforms)
                 for aruco_transform in aruco_transforms:
                     x = aruco_transform.x * 100
                     y = aruco_transform.y * 100
