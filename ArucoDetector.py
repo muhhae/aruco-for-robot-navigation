@@ -1,24 +1,66 @@
 import cv2
 import os
+from enum import Enum
+import numpy as np
+from typing import Dict
 
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 camera_calibration_filename = "./calibration_chessboard.yaml"
-
-warehouse_map = [[0, 1, 2, 3], [4, 5, 6, 7]]
-dist_between = 0.3
 
 
 class ArucoTransform:
     x: float
     y: float
     z: float
+
+    x_rot: float
+    y_rot: float
+    z_rot: float
+
     id: int
 
-    def __init__(self, id, x, y, z):
+    def __init__(self, id, x, y, z, x_rot, y_rot, z_rot):
         self.x = x
         self.y = y
         self.z = z
+
+        self.x_rot = x_rot
+        self.y_rot = y_rot
+        self.z_rot = z_rot
+
         self.id = id
+
+
+class Direction(Enum):
+    T = 0
+    B = 1
+    L = 2
+    R = 3
+
+
+class ArucoMarker:
+    id: int
+    neighbour: Dict[Direction, int] = {}
+
+    def __init__(self, id):
+        self.id = id
+
+
+def rvec_to_euler_angles(rvec):
+    rotation_matrix, _ = cv2.Rodrigues(rvec)
+    sy = np.sqrt(rotation_matrix[0, 0] ** 2 + rotation_matrix[1, 0] ** 2)
+
+    singular = sy < 1e-6  # Check for singularity
+    if not singular:
+        pitch = np.arctan2(rotation_matrix[2, 1], rotation_matrix[2, 2])
+        yaw = np.arctan2(-rotation_matrix[2, 0], sy)
+        roll = np.arctan2(rotation_matrix[1, 0], rotation_matrix[0, 0])
+    else:
+        pitch = np.arctan2(-rotation_matrix[1, 2], rotation_matrix[1, 1])
+        yaw = np.arctan2(-rotation_matrix[2, 0], sy)
+        roll = 0
+
+    return np.degrees([pitch, yaw, roll])  # Convert to degrees
 
 
 class ArucoDetector:
@@ -28,6 +70,7 @@ class ArucoDetector:
     distortion_coeff: cv2.typing.MatLike
     camera: cv2.VideoCapture
     z_offset: float
+    marker_list: list[ArucoMarker]
 
     def __init__(
         self,
@@ -36,6 +79,7 @@ class ArucoDetector:
         aruco_dict_type: int,
         camera_index: int,
         z_offset: float,
+        marker_list: list[ArucoMarker],
     ):
         fs = cv2.FileStorage(calibration_file, cv2.FILE_STORAGE_READ)
         self.camera_matrix = fs.getNode("K").mat()
@@ -47,37 +91,27 @@ class ArucoDetector:
         self.camera = cv2.VideoCapture(camera_index)
         self.marker_size = marker_size
         self.z_offset = z_offset
+        self.marker_list = marker_list
 
-    def GetPosition(self, aruco_transforms: list[ArucoTransform]) -> (int, int):
+    def GetPosition(
+        self, aruco_transforms: list[ArucoTransform]
+    ) -> (int, int, Direction):
         nearest = aruco_transforms[0]
-        second_nearest = aruco_transforms[0]
 
-        for aruco_transform in aruco_transforms[1:]:
-            if aruco_transform.z < nearest.z:
-                second_nearest = nearest
-                nearest = aruco_transform
-            elif aruco_transform.z < second_nearest.z:
-                second_nearest = aruco_transform.z
+        for e in aruco_transforms:
+            if e.z > nearest.z:
+                nearest = e
 
-        nearest_column = -1
-        nearest_row = -1
-        second_nearest_column = -1
-        second_nearest_row = -1
-
-        for i, row in enumerate(warehouse_map):
-            if nearest_column != -1 and second_nearest_column != -1:
-                break
-            if nearest_column == -1:
-                nearest_row = row
-                nearest_column = row.index(nearest.id)
-            if second_nearest_column == -1:
-                second_nearest_row = row
-                second_nearest_column = row.index(second_nearest.id)
-
-        row = 2 * nearest_row - second_nearest_row
-        column = 2 * nearest_column - second_nearest_column
-
-        return row, column
+        direction = None
+        if abs(nearest.z_rot - 180) < 20 or abs(nearest.z_rot - (-180)) < 20:
+            direction = Direction.T
+        elif abs(nearest.z_rot - 0) < 20:
+            direction = Direction.B
+        elif abs(nearest.z_rot - 90) < 20:
+            direction = Direction.R
+        elif abs(nearest.z_rot - (-90)) < 20:
+            direction = Direction.L
+        return nearest.id, nearest.z, direction
 
     def Run(self):
         while 1:
@@ -87,14 +121,17 @@ class ArucoDetector:
 
             aruco_transforms = self.Detect(frame)
             if aruco_transforms is not None:
-                # self.GetPosition(aruco_transforms)
-                for aruco_transform in aruco_transforms:
-                    x = aruco_transform.x * 100
-                    y = aruco_transform.y * 100
-                    z = aruco_transform.z * 100 + self.z_offset
+                id, dis, dir = self.GetPosition(aruco_transforms)
+                aruco_marker = None
+                for e in self.marker_list:
+                    if e.id == id:
+                        aruco_marker = e
+                        break
+                if aruco_marker is not None and dir is not None:
+                    current_id = aruco_marker.neighbour[dir]
 
-                    print("id ", aruco_transform.id)
-                    print(f"{x:>5.0f}cm {y:>5.0f}cm {z:>5.0f}cm")
+                    print("id ", id, "dis ", dis, "dir ", dir)
+                    print("current ", current_id)
 
             cv2.imshow("frame", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -118,10 +155,15 @@ class ArucoDetector:
 
         aruco_transforms = []
         for i, marker_id in enumerate(marker_ids):
-            x = tvecs[i][0][0]
-            y = tvecs[i][0][1]
-            z = tvecs[i][0][2]
-            aruco_transforms.append(ArucoTransform(marker_id, x, y, z))
+            x = tvecs[i][0][0] * 100
+            y = tvecs[i][0][1] * 100
+            z = (tvecs[i][0][2] * 100) + self.z_offset
+
+            rot = rvec_to_euler_angles(rvecs[i])
+
+            aruco_transforms.append(
+                ArucoTransform(marker_id[0], x, y, z, rot[0], rot[1], rot[2])
+            )
 
             cv2.drawFrameAxes(
                 frame,
@@ -135,12 +177,24 @@ class ArucoDetector:
 
 
 def main():
+    marker_0 = ArucoMarker(0)
+    marker_0.neighbour = {
+        Direction.T: 4,
+        Direction.B: 1,
+        Direction.R: 2,
+        Direction.L: 3,
+    }
+
+    marker_list = []
+    marker_list.append(marker_0)
+
     detector = ArucoDetector(
         aruco_dict_type=cv2.aruco.DICT_4X4_50,
         marker_size=0.10,
         calibration_file="./calibration_chessboard.yaml",
         camera_index=0,
         z_offset=-28,
+        marker_list=marker_list,
     )
     detector.Run()
 
