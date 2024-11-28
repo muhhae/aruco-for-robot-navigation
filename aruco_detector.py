@@ -8,6 +8,23 @@ os.environ["QT_QPA_PLATFORM"] = "xcb"
 camera_calibration_filename = "./calibration_chessboard.yaml"
 
 
+def rvec_to_euler_angles(rvec):
+    rotation_matrix, _ = cv2.Rodrigues(rvec)
+    sy = np.sqrt(rotation_matrix[0, 0] ** 2 + rotation_matrix[1, 0] ** 2)
+
+    singular = sy < 1e-6
+    if not singular:
+        pitch = np.arctan2(rotation_matrix[2, 1], rotation_matrix[2, 2])
+        yaw = np.arctan2(-rotation_matrix[2, 0], sy)
+        roll = np.arctan2(rotation_matrix[1, 0], rotation_matrix[0, 0])
+    else:
+        pitch = np.arctan2(-rotation_matrix[1, 2], rotation_matrix[1, 1])
+        yaw = np.arctan2(-rotation_matrix[2, 0], sy)
+        roll = 0
+
+    return np.degrees([pitch, yaw, roll])
+
+
 class ArucoTransform:
     x: float
     y: float
@@ -38,29 +55,29 @@ class Direction(Enum):
     R = 3
 
 
-class ArucoMarker:
+class RobotState(Enum):
+    READY = 0
+    RUNNING = 1
+    STOP = 2
+    FINISH = 3
+
+
+class ObjectType(Enum):
+    ARUCO_MARKER = 0
+    ITEM = 1
+
+
+class Object:
+    Type: ObjectType
+
     id: int
     neighbour: Dict[Direction, int] = {}
 
-    def __init__(self, id):
+    def __init__(self, ObjectType, id):
         self.id = id
 
-
-def rvec_to_euler_angles(rvec):
-    rotation_matrix, _ = cv2.Rodrigues(rvec)
-    sy = np.sqrt(rotation_matrix[0, 0] ** 2 + rotation_matrix[1, 0] ** 2)
-
-    singular = sy < 1e-6  # Check for singularity
-    if not singular:
-        pitch = np.arctan2(rotation_matrix[2, 1], rotation_matrix[2, 2])
-        yaw = np.arctan2(-rotation_matrix[2, 0], sy)
-        roll = np.arctan2(rotation_matrix[1, 0], rotation_matrix[0, 0])
-    else:
-        pitch = np.arctan2(-rotation_matrix[1, 2], rotation_matrix[1, 1])
-        yaw = np.arctan2(-rotation_matrix[2, 0], sy)
-        roll = 0
-
-    return np.degrees([pitch, yaw, roll])  # Convert to degrees
+    def __eq__(self, other) -> bool:
+        return self.id == other.id and self.Type == other.Type
 
 
 class ArucoDetector:
@@ -70,7 +87,10 @@ class ArucoDetector:
     distortion_coeff: cv2.typing.MatLike
     camera: cv2.VideoCapture
     z_offset: float
-    marker_list: list[ArucoMarker]
+    marker_list: list[Object]
+    current_position: Object
+    state: RobotState
+    routes: list[Object]
 
     def __init__(
         self,
@@ -79,7 +99,8 @@ class ArucoDetector:
         aruco_dict_type: int,
         camera_index: int,
         z_offset: float,
-        marker_list: list[ArucoMarker],
+        marker_list: list[Object],
+        routes: list[int],
     ):
         fs = cv2.FileStorage(calibration_file, cv2.FILE_STORAGE_READ)
         self.camera_matrix = fs.getNode("K").mat()
@@ -92,6 +113,8 @@ class ArucoDetector:
         self.marker_size = marker_size
         self.z_offset = z_offset
         self.marker_list = marker_list
+        self.state = RobotState.READY
+        self.routes = routes
 
     def GetPosition(
         self, aruco_transforms: list[ArucoTransform]
@@ -113,25 +136,53 @@ class ArucoDetector:
             direction = Direction.L
         return nearest.id, nearest.z, direction
 
+    def CurrentTask(self, current_position: Object, distance: float):
+        n = distance - 15
+        if abs(n) < 1:
+            print("Exactly at", current_position.id)
+            next_id_index = self.routes.index(self.current_position.id) + 1
+            next_id = self.routes[next_id_index]
+            if self.current_position.neighbour[Direction.T] == next_id:
+                print("Move Forward")
+            elif self.current_position.neighbour[Direction.L] == next_id:
+                print("Move Left")
+            elif self.current_position.neighbour[Direction.R] == next_id:
+                print("Move Right")
+            elif self.current_position.neighbour[Direction.B] == next_id:
+                print("Move Backward")
+        elif n > 0:
+            print("Approaching", current_position.id)
+        else:
+            print("Moving away from", current_position.id)
+
+    def ProcessArucoTransform(self, aruco_transforms: list[ArucoTransform]):
+        id, dis, dir = self.GetPosition(aruco_transforms)
+        aruco_marker = None
+        for e in self.marker_list:
+            if e.id == id and e.Type == ObjectType.ARUCO_MARKER:
+                aruco_marker = e
+                break
+        if aruco_marker is not None and dir is not None:
+            current_id = aruco_marker.neighbour[dir]
+            for marker in self.marker_list:
+                if marker.id == current_id:
+                    self.current_position = marker
+                    if self.current_position.id == self.routes[-1]:
+                        self.state == RobotState.STOP
+
+                # print("id ", id, "dis ", dis, "dir ", dir)
+                # print("current ", current_id)
+
     def Run(self):
-        while 1:
+        while self.state == RobotState.RUNNING:
             ret, frame = self.camera.read()
             if ret is None:
                 break
 
             aruco_transforms = self.Detect(frame)
             if aruco_transforms is not None:
-                id, dis, dir = self.GetPosition(aruco_transforms)
-                aruco_marker = None
-                for e in self.marker_list:
-                    if e.id == id:
-                        aruco_marker = e
-                        break
-                if aruco_marker is not None and dir is not None:
-                    current_id = aruco_marker.neighbour[dir]
-
-                    print("id ", id, "dis ", dis, "dir ", dir)
-                    print("current ", current_id)
+                self.ProcessArucoTransform(aruco_transforms)
+                self.CurrentTask()
 
             cv2.imshow("frame", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -177,7 +228,7 @@ class ArucoDetector:
 
 
 def main():
-    marker_0 = ArucoMarker(0)
+    marker_0 = Object(0, ObjectType.ARUCO_MARKER)
     marker_0.neighbour = {
         Direction.T: 4,
         Direction.B: 1,
