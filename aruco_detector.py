@@ -73,8 +73,9 @@ class Object:
     id: int
     neighbour: Dict[Direction, int] = {}
 
-    def __init__(self, ObjectType, id):
+    def __init__(self, id, ObjectType):
         self.id = id
+        self.Type = ObjectType
 
     def __eq__(self, other) -> bool:
         return self.id == other.id and self.Type == other.Type
@@ -91,6 +92,33 @@ class ArucoDetector:
     current_position: Object
     state: RobotState
     routes: list[Object]
+    orientation: Direction
+    orientation_dict = {
+        Direction.T: {
+            Direction.T: Direction.T,
+            Direction.B: Direction.B,
+            Direction.L: Direction.L,
+            Direction.R: Direction.R,
+        },
+        Direction.B: {
+            Direction.T: Direction.B,
+            Direction.B: Direction.T,
+            Direction.L: Direction.R,
+            Direction.R: Direction.L,
+        },
+        Direction.L: {
+            Direction.T: Direction.R,
+            Direction.B: Direction.L,
+            Direction.L: Direction.B,
+            Direction.R: Direction.T,
+        },
+        Direction.R: {
+            Direction.T: Direction.L,
+            Direction.B: Direction.R,
+            Direction.L: Direction.T,
+            Direction.R: Direction.B,
+        },
+    }
 
     def __init__(
         self,
@@ -100,7 +128,6 @@ class ArucoDetector:
         camera_index: int,
         z_offset: float,
         marker_list: list[Object],
-        routes: list[int],
     ):
         fs = cv2.FileStorage(calibration_file, cv2.FILE_STORAGE_READ)
         self.camera_matrix = fs.getNode("K").mat()
@@ -114,7 +141,7 @@ class ArucoDetector:
         self.z_offset = z_offset
         self.marker_list = marker_list
         self.state = RobotState.READY
-        self.routes = routes
+        self.current_position = None
 
     def GetPosition(
         self, aruco_transforms: list[ArucoTransform]
@@ -122,67 +149,83 @@ class ArucoDetector:
         nearest = aruco_transforms[0]
 
         for e in aruco_transforms:
-            if e.z > nearest.z:
+            if e.z < nearest.z:
                 nearest = e
 
         direction = None
         if abs(nearest.z_rot - 180) < 20 or abs(nearest.z_rot - (-180)) < 20:
             direction = Direction.T
+            self.orientation = Direction.B
         elif abs(nearest.z_rot - 0) < 20:
             direction = Direction.B
+            self.orientation = Direction.T
         elif abs(nearest.z_rot - 90) < 20:
             direction = Direction.R
+            self.orientation = Direction.L
         elif abs(nearest.z_rot - (-90)) < 20:
             direction = Direction.L
+            self.orientation = Direction.R
         return nearest.id, nearest.z, direction
 
-    def CurrentTask(self, current_position: Object, distance: float):
+    def CurrentTask(self, distance: float):
+        if self.current_position is None:
+            return
+
         n = distance - 15
         if abs(n) < 1:
-            print("Exactly at", current_position.id)
+            print("Exactly at", self.current_position.id)
             next_id_index = self.routes.index(self.current_position.id) + 1
             next_id = self.routes[next_id_index]
-            if self.current_position.neighbour[Direction.T] == next_id:
+            T = self.orientation_dict[Direction.T][self.orientation]
+            B = self.orientation_dict[Direction.B][self.orientation]
+            L = self.orientation_dict[Direction.L][self.orientation]
+            R = self.orientation_dict[Direction.R][self.orientation]
+            if self.current_position.neighbour[T] == next_id:
                 print("Move Forward")
-            elif self.current_position.neighbour[Direction.L] == next_id:
+            elif self.current_position.neighbour[L] == next_id:
                 print("Move Left")
-            elif self.current_position.neighbour[Direction.R] == next_id:
+            elif self.current_position.neighbour[R] == next_id:
                 print("Move Right")
-            elif self.current_position.neighbour[Direction.B] == next_id:
+            elif self.current_position.neighbour[B] == next_id:
                 print("Move Backward")
         elif n > 0:
-            print("Approaching", current_position.id)
+            print("Approaching", self.current_position.id)
+            print("Move Forward")
         else:
-            print("Moving away from", current_position.id)
+            print("Moving away from", self.current_position.id)
+            print("Move Backward")
 
-    def ProcessArucoTransform(self, aruco_transforms: list[ArucoTransform]):
-        id, dis, dir = self.GetPosition(aruco_transforms)
+    def ProcessArucoTransform(self, id, dis, dir):
         aruco_marker = None
+        self.current_position = None
         for e in self.marker_list:
             if e.id == id and e.Type == ObjectType.ARUCO_MARKER:
                 aruco_marker = e
                 break
         if aruco_marker is not None and dir is not None:
             current_id = aruco_marker.neighbour[dir]
+            print("id ", id, "dis ", dis, "dir ", dir)
+            print("current ", current_id)
             for marker in self.marker_list:
                 if marker.id == current_id:
                     self.current_position = marker
                     if self.current_position.id == self.routes[-1]:
                         self.state == RobotState.STOP
 
-                # print("id ", id, "dis ", dis, "dir ", dir)
-                # print("current ", current_id)
+        return dis
 
     def Run(self):
-        while self.state == RobotState.RUNNING:
+        self.state = RobotState.RUNNING
+        while 1:
             ret, frame = self.camera.read()
             if ret is None:
                 break
 
             aruco_transforms = self.Detect(frame)
             if aruco_transforms is not None:
-                self.ProcessArucoTransform(aruco_transforms)
-                self.CurrentTask()
+                id, dis, dir = self.GetPosition(aruco_transforms)
+                self.ProcessArucoTransform(id, dis, dir)
+                self.CurrentTask(dis)
 
             cv2.imshow("frame", frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -230,14 +273,71 @@ class ArucoDetector:
 def main():
     marker_0 = Object(0, ObjectType.ARUCO_MARKER)
     marker_0.neighbour = {
-        Direction.T: 4,
+        Direction.T: 1,
+        Direction.B: None,
+        Direction.R: None,
+        Direction.L: None,
+    }
+    marker_1 = Object(1, ObjectType.ARUCO_MARKER)
+    marker_1.neighbour = {
+        Direction.T: 2,
+        Direction.B: 0,
+        Direction.R: 3,
+        Direction.L: None,
+    }
+    marker_2 = Object(2, ObjectType.ARUCO_MARKER)
+    marker_2.neighbour = {
+        Direction.T: None,
         Direction.B: 1,
-        Direction.R: 2,
+        Direction.R: None,
+        Direction.L: None,
+    }
+    marker_3 = Object(3, ObjectType.ARUCO_MARKER)
+    marker_3.neighbour = {
+        Direction.T: None,
+        Direction.B: None,
+        Direction.R: 5,
+        Direction.L: 1,
+    }
+    marker_4 = Object(4, ObjectType.ARUCO_MARKER)
+    marker_4.neighbour = {
+        Direction.T: None,
+        Direction.B: 6,
+        Direction.R: None,
+        Direction.L: None,
+    }
+    marker_5 = Object(5, ObjectType.ARUCO_MARKER)
+    marker_5.neighbour = {
+        Direction.T: 6,
+        Direction.B: None,
+        Direction.R: 7,
         Direction.L: 3,
     }
+    marker_6 = Object(6, ObjectType.ARUCO_MARKER)
+    marker_6.neighbour = {
+        Direction.T: 4,
+        Direction.B: 5,
+        Direction.R: None,
+        Direction.L: None,
+    }
+    marker_7 = Object(7, ObjectType.ARUCO_MARKER)
+    marker_7.neighbour = {
+        Direction.T: None,
+        Direction.B: None,
+        Direction.R: None,
+        Direction.L: 5,
+    }
 
-    marker_list = []
-    marker_list.append(marker_0)
+    marker_list = [
+        marker_0,
+        marker_1,
+        marker_2,
+        marker_3,
+        marker_4,
+        marker_5,
+        marker_6,
+        marker_7,
+    ]
 
     detector = ArucoDetector(
         aruco_dict_type=cv2.aruco.DICT_4X4_50,
@@ -247,6 +347,7 @@ def main():
         z_offset=-28,
         marker_list=marker_list,
     )
+    detector.routes = [0, 1, 3, 5, 6]
     detector.Run()
 
 
