@@ -86,6 +86,7 @@ class Object:
 
 class ArucoDetector:
     current_move = None
+    past_move = None
     controller: RobotControl
     frame: cv2.UMat
     aruco_dict: cv2.aruco.Dictionary
@@ -238,7 +239,7 @@ class ArucoDetector:
                 id, dis, dir = self.GetPosition(aruco_transforms)
                 self.ProcessArucoTransform(id, dis, dir)
                 self.CurrentTask(dis)
-            if self.current_move is not None:
+            if self.current_move is not None and self.past_move != self.current_move:
                 if self.current_move == "Maju":
                     self.controller.robot_forward()
                 elif self.current_move == "Mundur":
@@ -247,6 +248,7 @@ class ArucoDetector:
                     self.controller.robot_turn_right()
                 elif self.current_move == "Kiri":
                     self.controller.robot_pivot_left()
+            self.past_move = self.current_move
             self.frame = frame.copy()
             # cv2.imshow("frame", self.frame)
             # if cv2.waitKey(1) & 0xFF == ord("q"):
