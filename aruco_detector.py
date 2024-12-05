@@ -4,6 +4,7 @@ from enum import Enum
 import numpy as np
 from typing import Dict
 
+
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 camera_calibration_filename = "./calibration_chessboard.yaml"
 
@@ -73,15 +74,17 @@ class Object:
     id: int
     neighbour: Dict[Direction, int] = {}
 
-    def __init__(self, id, ObjectType):
+    def __init__(self, id, ObjectType, neighbour):
         self.id = id
         self.Type = ObjectType
+        self.neighbour = neighbour
 
     def __eq__(self, other) -> bool:
         return self.id == other.id and self.Type == other.Type
 
 
 class ArucoDetector:
+    frame: cv2.UMat
     aruco_dict: cv2.aruco.Dictionary
     marker_size: float
     camera_matrix: cv2.typing.MatLike
@@ -214,7 +217,7 @@ class ArucoDetector:
 
         return dis
 
-    def Run(self):
+    def Start(self):
         self.state = RobotState.RUNNING
         while 1:
             ret, frame = self.camera.read()
@@ -227,7 +230,8 @@ class ArucoDetector:
                 self.ProcessArucoTransform(id, dis, dir)
                 self.CurrentTask(dis)
 
-            cv2.imshow("frame", frame)
+            self.frame = frame.copy()
+            cv2.imshow("frame", self.frame)
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
         cv2.destroyAllWindows()
@@ -271,72 +275,87 @@ class ArucoDetector:
 
 
 def main():
-    marker_0 = Object(0, ObjectType.ARUCO_MARKER)
-    marker_0.neighbour = {
-        Direction.T: 1,
-        Direction.B: None,
-        Direction.R: None,
-        Direction.L: None,
-    }
-    marker_1 = Object(1, ObjectType.ARUCO_MARKER)
-    marker_1.neighbour = {
-        Direction.T: 2,
-        Direction.B: 0,
-        Direction.R: 3,
-        Direction.L: None,
-    }
-    marker_2 = Object(2, ObjectType.ARUCO_MARKER)
-    marker_2.neighbour = {
-        Direction.T: None,
-        Direction.B: 1,
-        Direction.R: None,
-        Direction.L: None,
-    }
-    marker_3 = Object(3, ObjectType.ARUCO_MARKER)
-    marker_3.neighbour = {
-        Direction.T: None,
-        Direction.B: None,
-        Direction.R: 5,
-        Direction.L: 1,
-    }
-    marker_4 = Object(4, ObjectType.ARUCO_MARKER)
-    marker_4.neighbour = {
-        Direction.T: None,
-        Direction.B: 6,
-        Direction.R: None,
-        Direction.L: None,
-    }
-    marker_5 = Object(5, ObjectType.ARUCO_MARKER)
-    marker_5.neighbour = {
-        Direction.T: 6,
-        Direction.B: None,
-        Direction.R: 7,
-        Direction.L: 3,
-    }
-    marker_6 = Object(6, ObjectType.ARUCO_MARKER)
-    marker_6.neighbour = {
-        Direction.T: 4,
-        Direction.B: 5,
-        Direction.R: None,
-        Direction.L: None,
-    }
-    marker_7 = Object(7, ObjectType.ARUCO_MARKER)
-    marker_7.neighbour = {
-        Direction.T: None,
-        Direction.B: None,
-        Direction.R: None,
-        Direction.L: 5,
-    }
-
-    marker_list = [
-        marker_0,
-        marker_1,
-        marker_2,
-        marker_3,
-        marker_4,
-        marker_5,
-        marker_6,
-        marker_7,
+    markers = [
+        Object(
+            0,
+            ObjectType.ARUCO_MARKER,
+            {
+                Direction.T: 1,
+                Direction.B: None,
+                Direction.R: None,
+                Direction.L: None,
+            },
+        ),
+        Object(
+            1,
+            ObjectType.ARUCO_MARKER,
+            {
+                Direction.T: 2,
+                Direction.B: 0,
+                Direction.R: 3,
+                Direction.L: None,
+            },
+        ),
+        Object(
+            2,
+            ObjectType.ARUCO_MARKER,
+            {
+                Direction.T: None,
+                Direction.B: 1,
+                Direction.R: None,
+                Direction.L: None,
+            },
+        ),
+        Object(
+            3,
+            ObjectType.ARUCO_MARKER,
+            {
+                Direction.T: None,
+                Direction.B: None,
+                Direction.R: 5,
+                Direction.L: 1,
+            },
+        ),
+        Object(
+            4,
+            ObjectType.ARUCO_MARKER,
+            {
+                Direction.T: None,
+                Direction.B: 6,
+                Direction.R: None,
+                Direction.L: None,
+            },
+        ),
+        Object(
+            5,
+            ObjectType.ARUCO_MARKER,
+            {
+                Direction.T: 6,
+                Direction.B: None,
+                Direction.R: 7,
+                Direction.L: 3,
+            },
+        ),
+        Object(
+            6,
+            ObjectType.ARUCO_MARKER,
+            {
+                Direction.T: 4,
+                Direction.B: 5,
+                Direction.R: None,
+                Direction.L: None,
+            },
+        ),
+        Object(
+            7,
+            ObjectType.ARUCO_MARKER,
+            {
+                Direction.T: None,
+                Direction.B: None,
+                Direction.R: None,
+                Direction.L: 5,
+            },
+        ),
     ]
 
     detector = ArucoDetector(
@@ -345,10 +364,10 @@ def main():
         calibration_file="./calibration_chessboard.yaml",
         camera_index=0,
         z_offset=-28,
-        marker_list=marker_list,
+        marker_list=markers,
     )
     detector.routes = [0, 1, 3, 5, 6]
-    detector.Run()
+    detector.Start()
 
 
 if __name__ == "__main__":

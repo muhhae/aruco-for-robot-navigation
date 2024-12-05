@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaming Live Video from Webcam to Web Using Python and OpenCV</title>
+    <style>
+        img {
+            height: 720px;
+            width: 960px;
+        }
+    </style>
+</head>
+<body>
+    <img id="video" />
+    <script>
+        let img = document.getElementById("video");
+        ws = new WebSocket("ws://localhost:8089");
+        ws.onmessage = (event) => {
+            let payload = JSON.parse(event.data);
+            img.setAttribute("src", `data:image/png;base64,${payload.frame}`);
+        };
+</script>
+</body>
+</html>
