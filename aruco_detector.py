@@ -3,7 +3,6 @@ import os
 from enum import Enum
 import numpy as np
 from typing import Dict
-from controller import RobotControl
 
 
 os.environ["QT_QPA_PLATFORM"] = "xcb"
@@ -85,7 +84,6 @@ class Object:
 
 
 class ArucoDetector:
-    controller: RobotControl
     frame: cv2.UMat
     aruco_dict: cv2.aruco.Dictionary
     marker_size: float
@@ -133,7 +131,6 @@ class ArucoDetector:
         camera_index: int,
         z_offset: float,
         marker_list: list[Object],
-        controller: RobotControl,
     ):
         fs = cv2.FileStorage(calibration_file, cv2.FILE_STORAGE_READ)
         self.camera_matrix = fs.getNode("K").mat()
@@ -148,7 +145,6 @@ class ArucoDetector:
         self.marker_list = marker_list
         self.state = RobotState.READY
         self.current_position = None
-        self.controller = controller
 
     def GetPosition(
         self, aruco_transforms: list[ArucoTransform]
@@ -178,7 +174,7 @@ class ArucoDetector:
         if self.current_position is None:
             return
 
-        n = distance - 20
+        n = distance - 30
         if abs(n) < 1:
             print("Exactly at", self.current_position.id)
             next_id_index = self.routes.index(self.current_position.id) + 1
@@ -189,24 +185,18 @@ class ArucoDetector:
             R = self.orientation_dict[Direction.R][self.orientation]
             if self.current_position.neighbour[T] == next_id:
                 print("Move Forward")
-                self.controller.robot_forward()
             elif self.current_position.neighbour[L] == next_id:
                 print("Move Left")
-                self.controller.robot_pivot_left()
             elif self.current_position.neighbour[R] == next_id:
                 print("Move Right")
-                self.controller.robot_pivot_right()
             elif self.current_position.neighbour[B] == next_id:
                 print("Move Backward")
-                self.controller.robot_backward()
         elif n > 0:
             print("Approaching", self.current_position.id)
             print("Move Forward")
-            self.controller.robot_forward()
         else:
             print("Moving away from", self.current_position.id)
             print("Move Backward")
-            self.controller.robot_backward()
 
     def ProcessArucoTransform(self, id, dis, dir):
         aruco_marker = None

@@ -5,7 +5,6 @@ from aruco_detector import Object, Direction, ObjectType, ArucoDetector
 # from broadcaster import Broadcaster
 import threading
 import asyncio
-from controller import RobotControl
 
 
 class Robot:
@@ -54,27 +53,13 @@ if __name__ == "__main__":
             },
         ),
     ]
-    left = {
-        "pwm1": 12,
-        "pwm2": 13,
-        "enb1": 5,
-        "enb2": 6,
-    }
-
-    right = {
-        "pwm1": 18,
-        "pwm2": 19,
-        "enb1": 20,
-        "enb2": 21,
-    }
     robot.detector = ArucoDetector(
         aruco_dict_type=cv2.aruco.DICT_4X4_50,
-        marker_size=0.10,
+        marker_size=0.15,
         calibration_file="./calibration_chessboard.yaml",
         camera_index=0,
         z_offset=-28,
         marker_list=markers,
-        controller=RobotControl(left, right),
     )
     robot.detector.routes = [1, 0, 4]
     robot_detector_thread = threading.Thread(target=robot.detector.Start)
