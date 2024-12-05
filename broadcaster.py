@@ -16,12 +16,12 @@ class Broadcaster:
         pass
 
     async def Start(self, detector: ArucoDetector):
-        try:
-            self.httpserver.start()
-            async with websockets.serve(self.handler, "", 8089):
-                await self.broadcast(detector)
-        except (KeyboardInterrupt, asyncio.CancelledError):
-            self.httpserver.stop()
+        self.httpserver.start()
+        async with websockets.serve(self.handler, "", 8089):
+            await self.broadcast(detector)
+
+    def Stop(self):
+        self.httpserver.stop()
 
     async def handler(self, websocket):
         self.clients.add(websocket)
@@ -31,7 +31,7 @@ class Broadcaster:
             self.clients.remove(websocket)
 
     async def send(self, websocket, detector: ArucoDetector):
-        frame = detector.frame
+        frame = ArucoDetector.frame
         if frame is None:
             return
         ret, encoded = cv2.imencode(".png", frame)

@@ -1,14 +1,16 @@
 import time
 import cv2
 from aruco_detector import Object, Direction, ObjectType, ArucoDetector
-from broadcaster import Broadcaster
+
+# from broadcaster import Broadcaster
 import threading
 import asyncio
+from controller import RobotControl
 
 
 class Robot:
     detector: ArucoDetector
-    broadcaster: Broadcaster
+    # broadcaster: Broadcaster
 
     def __init__(self):
         pass
@@ -25,9 +27,9 @@ if __name__ == "__main__":
             0,
             ObjectType.ARUCO_MARKER,
             {
-                Direction.T: 1,
-                Direction.B: None,
-                Direction.R: None,
+                Direction.T: 3,
+                Direction.B: 1,
+                Direction.R: 4,
                 Direction.L: None,
             },
         ),
@@ -35,18 +37,8 @@ if __name__ == "__main__":
             1,
             ObjectType.ARUCO_MARKER,
             {
-                Direction.T: 2,
-                Direction.B: 0,
-                Direction.R: 3,
-                Direction.L: None,
-            },
-        ),
-        Object(
-            2,
-            ObjectType.ARUCO_MARKER,
-            {
-                Direction.T: None,
-                Direction.B: 1,
+                Direction.T: 0,
+                Direction.B: None,
                 Direction.R: None,
                 Direction.L: None,
             },
@@ -56,52 +48,25 @@ if __name__ == "__main__":
             ObjectType.ARUCO_MARKER,
             {
                 Direction.T: None,
-                Direction.B: None,
-                Direction.R: 5,
-                Direction.L: 1,
-            },
-        ),
-        Object(
-            4,
-            ObjectType.ARUCO_MARKER,
-            {
-                Direction.T: None,
-                Direction.B: 6,
+                Direction.B: 0,
                 Direction.R: None,
                 Direction.L: None,
-            },
-        ),
-        Object(
-            5,
-            ObjectType.ARUCO_MARKER,
-            {
-                Direction.T: 6,
-                Direction.B: None,
-                Direction.R: 7,
-                Direction.L: 3,
-            },
-        ),
-        Object(
-            6,
-            ObjectType.ARUCO_MARKER,
-            {
-                Direction.T: 4,
-                Direction.B: 5,
-                Direction.R: None,
-                Direction.L: None,
-            },
-        ),
-        Object(
-            7,
-            ObjectType.ARUCO_MARKER,
-            {
-                Direction.T: None,
-                Direction.B: None,
-                Direction.R: None,
-                Direction.L: 5,
             },
         ),
     ]
+    left = {
+        "pwm1": 12,
+        "pwm2": 13,
+        "enb1": 5,
+        "enb2": 6,
+    }
+
+    right = {
+        "pwm1": 18,
+        "pwm2": 19,
+        "enb1": 20,
+        "enb2": 21,
+    }
     robot.detector = ArucoDetector(
         aruco_dict_type=cv2.aruco.DICT_4X4_50,
         marker_size=0.10,
@@ -109,16 +74,21 @@ if __name__ == "__main__":
         camera_index=0,
         z_offset=-28,
         marker_list=markers,
+        controller=RobotControl(left, right),
     )
-    robot.detector.routes = [0, 1, 3, 5, 6]
+    robot.detector.routes = [1, 0, 4]
     robot_detector_thread = threading.Thread(target=robot.detector.Start)
-    robot.broadcaster = Broadcaster()
-
+    # robot.broadcaster = Broadcaster()
     robot_detector_thread.start()
-    asyncio.run(robot.broadcaster.Start(robot.detector))
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("Main thread interrupted")
-        robot_detector_thread.join()
+    print("Detector Started")
+    # time.sleep(1)
+    # asyncio.run(robot.broadcaster.Start(robot.detector))
+    # print("Broadcaster started")
+
+    # try:
+    #     while True:
+    #         time.sleep(1)
+    # except (KeyboardInterrupt, asyncio.CancelledError):
+    #     print("Main thread interrupted")
+    #     robot.broadcaster.Stop()
+    #     robot_detector_thread.join()
