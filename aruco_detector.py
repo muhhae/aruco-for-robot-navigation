@@ -231,10 +231,10 @@ class ArucoDetector:
                 self.CurrentTask(dis)
 
             self.frame = frame.copy()
-            cv2.imshow("frame", self.frame)
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                break
-        cv2.destroyAllWindows()
+        #     cv2.imshow("frame", self.frame)
+        #     if cv2.waitKey(1) & 0xFF == ord("q"):
+        #         break
+        # cv2.destroyAllWindows()
 
     def Detect(self, frame: cv2.UMat) -> list[ArucoTransform] | None:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
