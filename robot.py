@@ -69,7 +69,7 @@ if __name__ == "__main__":
     }
     robot.detector = ArucoDetector(
         aruco_dict_type=cv2.aruco.DICT_4X4_50,
-        marker_size=0.10,
+        marker_size=0.15,
         calibration_file="./calibration_chessboard.yaml",
         camera_index=0,
         z_offset=-28,
