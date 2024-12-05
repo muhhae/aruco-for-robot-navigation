@@ -1,3 +1,4 @@
+import time
 import cv2
 from aruco_detector import Object, Direction, ObjectType, ArucoDetector
 from broadcaster import Broadcaster
@@ -111,7 +112,13 @@ if __name__ == "__main__":
     )
     robot.detector.routes = [0, 1, 3, 5, 6]
     robot_detector_thread = threading.Thread(target=robot.detector.Start)
-    robot_detector_thread.start()
-
     robot.broadcaster = Broadcaster()
+
+    robot_detector_thread.start()
     asyncio.run(robot.broadcaster.Start(robot.detector))
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Main thread interrupted")
+        robot_detector_thread.join()
