@@ -29,16 +29,17 @@ class Controller(controller.Controller):
         )
 
     def Forward(self):
-        print("Forward Not Implemented")
+        self.rc.robot_forward()
 
     def Turn180(self):
-        print("Turn180 Not Implemented")
+        self.TurnLeft()
+        self.TurnLeft()
 
     def TurnLeft(self):
-        print("TurnLeft Not Implemented")
+        self.rc.robot_pivot_left()
 
     def TurnRight(self):
-        print("TurnRight Not Implemented")
+        self.rc.robot_pivot_right()
 
     def Stop(self):
-        print("Stop Not Implemented")
+        self.rc.robot_stop()

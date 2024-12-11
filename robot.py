@@ -4,7 +4,7 @@ from aruco_detector import Object, Direction, ObjectType, ArucoDetector
 
 from broadcaster import Broadcaster
 import asyncio
-from debug_controller import Controller
+from real_controller import Controller
 import threading
 
 
