@@ -8,7 +8,7 @@ import os
 import threading
 
 is_dev = os.getenv("DEV", "false").lower() in ("true", "1", "yes")
-if is_dev:
+if not is_dev:
     from real_controller import Controller
 else:
     from debug_controller import Controller
