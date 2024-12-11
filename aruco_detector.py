@@ -182,7 +182,7 @@ class ArucoDetector:
             return
 
         self.controller.Forward()
-        n = distance - 30
+        n = distance - 37
         if abs(n) < 1:
             print("Exactly at", self.current_position.id)
             print("Stop..")
@@ -213,8 +213,8 @@ class ArucoDetector:
                 break
         if aruco_marker is not None and dir is not None:
             current_id = aruco_marker.neighbour[dir]
-            print("id ", id, "dis ", dis, "dir ", dir)
-            print("current ", current_id)
+            # print("id ", id, "dis ", dis, "dir ", dir)
+            # print("current ", current_id)
             for marker in self.marker_list:
                 if marker.id == current_id:
                     self.current_position = marker
@@ -256,11 +256,11 @@ class ArucoDetector:
             #         self.controller.robot_pivot_left()
             self.past_move = self.current_move
             self.frame = frame.copy()
-        #     cv2.imshow("copy: ", self.frame)
-        #     cv2.imshow("original: ", frame)
-        #     if cv2.waitKey(1) & 0xFF == ord("q"):
-        #         break
-        # cv2.destroyAllWindows()
+            cv2.imshow("copy: ", self.frame)
+            cv2.imshow("original: ", frame)
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+        cv2.destroyAllWindows()
 
     def Detect(self, frame: cv2.UMat) -> list[ArucoTransform] | None:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

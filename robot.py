@@ -43,9 +43,9 @@ if __name__ == "__main__":
             0,
             ObjectType.ARUCO_MARKER,
             {
-                Direction.T: 3,
-                Direction.B: 1,
-                Direction.R: 4,
+                Direction.T: 1,
+                Direction.B: None,
+                Direction.R: None,
                 Direction.L: None,
             },
         ),
@@ -53,19 +53,19 @@ if __name__ == "__main__":
             1,
             ObjectType.ARUCO_MARKER,
             {
-                Direction.T: 0,
-                Direction.B: None,
+                Direction.T: 2,
+                Direction.B: 0,
                 Direction.R: None,
                 Direction.L: None,
             },
         ),
         Object(
-            3,
+            2,
             ObjectType.ARUCO_MARKER,
             {
                 Direction.T: None,
                 Direction.B: 0,
-                Direction.R: None,
+                Direction.R: 3,
                 Direction.L: None,
             },
         ),
@@ -79,6 +79,6 @@ if __name__ == "__main__":
         marker_list=markers,
         controller=Controller(),
     )
-    robot.detector.routes = [1, 0, 4]
+    robot.detector.routes = [0, 1, 2, 3]
     robot.broadcaster = Broadcaster()
     asyncio.run(robot.Start())
