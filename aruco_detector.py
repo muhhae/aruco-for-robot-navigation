@@ -229,6 +229,7 @@ class ArucoDetector:
 
     def Start(self):
         if self.thread is None:
+            print("Detector started...")
             self.thread = threading.Thread(target=self.Run)
             self.thread.start()
 
