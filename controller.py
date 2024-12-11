@@ -13,3 +13,6 @@ class Controller:
 
     def Stop(self):
         print("Stop Not Implemented")
+
+    def Disconnect(self):
+        print("Disconnect Not Implemented")

@@ -17,3 +17,7 @@ class Controller(controller.Controller):
 
     def Stop(self):
         print("Stop...")
+
+    def Disconnect(self):
+        self.Stop()
+        print("Disconnect...")

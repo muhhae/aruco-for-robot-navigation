@@ -226,6 +226,7 @@ class ArucoDetector:
     def Stop(self):
         self.thread.join()
         self.thread = None
+        self.controller.Stop()
 
     def Start(self):
         if self.thread is None:

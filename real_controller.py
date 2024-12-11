@@ -36,3 +36,7 @@ class Controller(controller.Controller):
 
     def Stop(self):
         self.rc.robot_stop()
+
+    def Disconnect(self):
+        self.Stop()
+        self.rc.disconnect()
