@@ -185,7 +185,7 @@ class ArucoDetector:
         n = distance - 37
         if abs(n) < 1:
             print("Exactly at", self.current_position.id)
-            print("Stop..")
+            self.controller.Stop()
             next_id_index = self.routes.index(self.current_position.id) + 1
             next_id = self.routes[next_id_index]
             T = self.orientation_dict[Direction.T][self.orientation]
@@ -226,7 +226,7 @@ class ArucoDetector:
     def Stop(self):
         self.thread.join()
         self.thread = None
-        self.controller.Stop()
+        self.controller.Disconnect()
 
     def Start(self):
         if self.thread is None:
