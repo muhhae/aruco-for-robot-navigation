@@ -4,8 +4,14 @@ from aruco_detector import Object, Direction, ObjectType, ArucoDetector
 
 from broadcaster import Broadcaster
 import asyncio
-from real_controller import Controller
+import os
 import threading
+
+is_dev = os.getenv("DEV", "false").lower() in ("true", "1", "yes")
+if is_dev:
+    from real_controller import Controller
+else:
+    from debug_controller import Controller
 
 
 class Robot:
