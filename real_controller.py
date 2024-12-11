@@ -22,7 +22,7 @@ class Controller(controller.Controller):
         )
 
     def Forward(self):
-        self.rc.robot_forward()
+        self.rc.robot_forward(25)
 
     def Turn180(self):
         self.TurnLeft()
