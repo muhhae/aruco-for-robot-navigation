@@ -3,8 +3,8 @@ import os
 from enum import Enum
 import numpy as np
 from typing import Dict
-from controller import RobotControl
-
+from controller import Controller
+import threading
 
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 camera_calibration_filename = "./calibration_chessboard.yaml"
@@ -85,10 +85,11 @@ class Object:
 
 
 class ArucoDetector:
+    thread: threading.Thread = None
     current_move = None
     past_move = None
-    controller: RobotControl
-    frame: cv2.UMat
+    controller: Controller
+    frame: cv2.UMat = None
     aruco_dict: cv2.aruco.Dictionary
     marker_size: float
     camera_matrix: cv2.typing.MatLike
@@ -135,7 +136,7 @@ class ArucoDetector:
         camera_index: int,
         z_offset: float,
         marker_list: list[Object],
-        controller: RobotControl,
+        controller: Controller,
     ):
         fs = cv2.FileStorage(calibration_file, cv2.FILE_STORAGE_READ)
         self.camera_matrix = fs.getNode("K").mat()
@@ -180,9 +181,11 @@ class ArucoDetector:
         if self.current_position is None:
             return
 
+        self.controller.Forward()
         n = distance - 30
         if abs(n) < 1:
             print("Exactly at", self.current_position.id)
+            print("Stop..")
             next_id_index = self.routes.index(self.current_position.id) + 1
             next_id = self.routes[next_id_index]
             T = self.orientation_dict[Direction.T][self.orientation]
@@ -190,23 +193,16 @@ class ArucoDetector:
             L = self.orientation_dict[Direction.L][self.orientation]
             R = self.orientation_dict[Direction.R][self.orientation]
             if self.current_position.neighbour[T] == next_id:
-                print("Move Forward")
                 self.current_move = "Maju"
             elif self.current_position.neighbour[L] == next_id:
-                print("Move Left")
+                self.controller.TurnLeft()
                 self.current_move = "Kiri"
             elif self.current_position.neighbour[R] == next_id:
-                print("Move Right")
+                self.controller.TurnRight()
                 self.current_move = "Kanan"
             elif self.current_position.neighbour[B] == next_id:
-                print("Move Backward")
+                self.controller.Turn180()
                 self.current_move = "Mundur"
-        elif n > 0:
-            print("Approaching", self.current_position.id)
-            print("Move Forward")
-        else:
-            print("Moving away from", self.current_position.id)
-            print("Move Backward")
 
     def ProcessArucoTransform(self, id, dis, dir):
         aruco_marker = None
@@ -227,11 +223,20 @@ class ArucoDetector:
 
         return dis
 
+    def Stop(self):
+        self.thread.join()
+        self.thread = None
+
     def Start(self):
-        self.state = RobotState.RUNNING
+        if self.thread is None:
+            self.thread = threading.Thread(target=self.Run)
+            self.thread.start()
+
+    def Run(self):
         while 1:
             ret, frame = self.camera.read()
-            if ret is None:
+            if not ret or frame is None:
+                print("Something wrong with the camera")
                 break
 
             aruco_transforms = self.Detect(frame)
@@ -239,18 +244,19 @@ class ArucoDetector:
                 id, dis, dir = self.GetPosition(aruco_transforms)
                 self.ProcessArucoTransform(id, dis, dir)
                 self.CurrentTask(dis)
-            if self.current_move is not None and self.past_move != self.current_move:
-                if self.current_move == "Maju":
-                    self.controller.robot_forward()
-                elif self.current_move == "Mundur":
-                    self.controller.robot_backward()
-                elif self.current_move == "Kanan":
-                    self.controller.robot_turn_right()
-                elif self.current_move == "Kiri":
-                    self.controller.robot_pivot_left()
+            # if self.current_move is not None and self.past_move != self.current_move:
+            #     if self.current_move == "Maju":
+            #         self.controller.robot_forward()
+            #     elif self.current_move == "Mundur":
+            #         self.controller.robot_backward()
+            #     elif self.current_move == "Kanan":
+            #         self.controller.robot_turn_right()
+            #     elif self.current_move == "Kiri":
+            #         self.controller.robot_pivot_left()
             self.past_move = self.current_move
             self.frame = frame.copy()
-        #     cv2.imshow("frame", self.frame)
+        #     cv2.imshow("copy: ", self.frame)
+        #     cv2.imshow("original: ", frame)
         #     if cv2.waitKey(1) & 0xFF == ord("q"):
         #         break
         # cv2.destroyAllWindows()

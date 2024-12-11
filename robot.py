@@ -1,23 +1,33 @@
-import time
+import signal
 import cv2
 from aruco_detector import Object, Direction, ObjectType, ArucoDetector
 
-# from broadcaster import Broadcaster
-import threading
+from broadcaster import Broadcaster
 import asyncio
-from controller import RobotControl
+from debug_controller import Controller
+import threading
 
 
 class Robot:
     detector: ArucoDetector
-    # broadcaster: Broadcaster
+    broadcaster: Broadcaster
+    controller: Controller
+    thread: threading.Thread
 
     def __init__(self):
         pass
 
+    async def Start(self):
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        try:
+            self.detector.Start()
+            # await self.broadcaster.Start(self.detector)
+        except (KeyboardInterrupt, asyncio.CancelledError):
+            # self.broadcaster.Stop()
+            self.detector.Stop()
 
-def main():
-    pass
+    def Stop():
+        pass
 
 
 if __name__ == "__main__":
@@ -54,19 +64,6 @@ if __name__ == "__main__":
             },
         ),
     ]
-    left = {
-        "pwm1": 12,
-        "pwm2": 13,
-        "enb1": 5,
-        "enb2": 6,
-    }
-
-    right = {
-        "pwm1": 18,
-        "pwm2": 19,
-        "enb1": 20,
-        "enb2": 21,
-    }
     robot.detector = ArucoDetector(
         aruco_dict_type=cv2.aruco.DICT_4X4_50,
         marker_size=0.15,
@@ -74,21 +71,8 @@ if __name__ == "__main__":
         camera_index=0,
         z_offset=-28,
         marker_list=markers,
-        controller=RobotControl(left, right),
+        controller=Controller(),
     )
     robot.detector.routes = [1, 0, 4]
-    robot_detector_thread = threading.Thread(target=robot.detector.Start)
-    # robot.broadcaster = Broadcaster()
-    robot_detector_thread.start()
-    print("Detector Started")
-    # time.sleep(1)
-    # asyncio.run(robot.broadcaster.Start(robot.detector))
-    # print("Broadcaster started")
-
-    # try:
-    #     while True:
-    #         time.sleep(1)
-    # except (KeyboardInterrupt, asyncio.CancelledError):
-    #     print("Main thread interrupted")
-    #     robot.broadcaster.Stop()
-    #     robot_detector_thread.join()
+    robot.broadcaster = Broadcaster()
+    asyncio.run(robot.Start())

@@ -24,33 +24,34 @@ class Broadcaster:
         self.httpserver.stop()
 
     async def handler(self, websocket):
+        print("Handled")
         self.clients.add(websocket)
         try:
             await websocket.wait_closed()
         finally:
             self.clients.remove(websocket)
+        print("clients", self.clients)
 
-    async def send(self, websocket, detector: ArucoDetector):
-        frame = ArucoDetector.frame
-        if frame is None:
-            return
-        ret, encoded = cv2.imencode(".png", frame)
-        if ret:
-            base64Frame = base64.b64encode(encoded).decode("ascii")
-            try:
-                # await websocket.send(base64Frame)
-                payload = {}
-                payload["frame"] = base64Frame
-                await websocket.send(json.dumps(payload))
-            except (websockets.ConnectionClosed, AssertionError):
-                pass
-        else:
-            print("failed to encode frame")
+    async def send(self, websocket, base64Frame: str):
+        try:
+            # await websocket.send(base64Frame)
+            payload = {}
+            payload["frame"] = base64Frame
+            await websocket.send(json.dumps(payload))
+        except (websockets.ConnectionClosed, AssertionError):
+            pass
 
     async def broadcast(self, detector: ArucoDetector):
         while True:
+            frame = ArucoDetector.frame
+            if frame is None:
+                continue
+            ret, encoded = cv2.imencode(".png", frame)
+            if not ret:
+                continue
+            base64Frame = base64.b64encode(encoded).decode("ascii")
             for websocket in self.clients:
-                await self.send(websocket, detector)
+                await self.send(websocket, base64Frame)
             await asyncio.sleep(0.04)
 
 

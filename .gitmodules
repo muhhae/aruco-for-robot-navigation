@@ -1,0 +1,3 @@
+[submodule "ArucoRobotControl"]
+	path = ArucoRobotControl
+	url = https://github.com/muhhae/aruco-robot-control
