@@ -181,7 +181,6 @@ class ArucoDetector:
         if self.current_position is None:
             return
 
-        self.controller.Forward()
         n = distance - 37
         if abs(n) < 1:
             print("Exactly at", self.current_position.id)
@@ -203,6 +202,8 @@ class ArucoDetector:
             elif self.current_position.neighbour[B] == next_id:
                 self.controller.Turn180()
                 self.current_move = "Mundur"
+        else:
+            self.controller.Forward()
 
     def ProcessArucoTransform(self, id, dis, dir):
         aruco_marker = None
@@ -246,15 +247,6 @@ class ArucoDetector:
                 id, dis, dir = self.GetPosition(aruco_transforms)
                 self.ProcessArucoTransform(id, dis, dir)
                 self.CurrentTask(dis)
-            # if self.current_move is not None and self.past_move != self.current_move:
-            #     if self.current_move == "Maju":
-            #         self.controller.robot_forward()
-            #     elif self.current_move == "Mundur":
-            #         self.controller.robot_backward()
-            #     elif self.current_move == "Kanan":
-            #         self.controller.robot_turn_right()
-            #     elif self.current_move == "Kiri":
-            #         self.controller.robot_pivot_left()
             self.past_move = self.current_move
             self.frame = frame.copy()
         #     cv2.imshow("copy: ", self.frame)
