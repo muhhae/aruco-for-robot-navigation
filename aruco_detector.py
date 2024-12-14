@@ -86,8 +86,6 @@ class Object:
 
 class ArucoDetector:
     thread: threading.Thread = None
-    current_move = None
-    past_move = None
     controller: Controller
     frame: cv2.UMat = None
     aruco_dict: cv2.aruco.Dictionary
@@ -192,16 +190,13 @@ class ArucoDetector:
             L = self.orientation_dict[Direction.L][self.orientation]
             R = self.orientation_dict[Direction.R][self.orientation]
             if self.current_position.neighbour[T] == next_id:
-                self.current_move = "Maju"
+                self.controller.Forward()
             elif self.current_position.neighbour[L] == next_id:
                 self.controller.TurnLeft()
-                self.current_move = "Kiri"
             elif self.current_position.neighbour[R] == next_id:
                 self.controller.TurnRight()
-                self.current_move = "Kanan"
             elif self.current_position.neighbour[B] == next_id:
                 self.controller.Turn180()
-                self.current_move = "Mundur"
         else:
             self.controller.Forward()
 
@@ -247,7 +242,6 @@ class ArucoDetector:
                 id, dis, dir = self.GetPosition(aruco_transforms)
                 self.ProcessArucoTransform(id, dis, dir)
                 self.CurrentTask(dis)
-            self.past_move = self.current_move
             self.frame = frame.copy()
         #     cv2.imshow("copy: ", self.frame)
         #     cv2.imshow("original: ", frame)
