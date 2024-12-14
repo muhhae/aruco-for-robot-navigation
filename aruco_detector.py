@@ -188,6 +188,7 @@ class ArucoDetector:
             return
 
         n = distance - 37
+        print("distance", n)
         if abs(n) < 1:
             print("Exactly at", self.current_position.id)
             self.controller.Stop()
