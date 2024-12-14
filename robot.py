@@ -1,6 +1,7 @@
 import signal
 import cv2
 from aruco_detector import Object, Direction, ObjectType, ArucoDetector
+from util import JSONToMarkers
 
 from broadcaster import Broadcaster
 import asyncio
@@ -38,38 +39,15 @@ class Robot:
 
 if __name__ == "__main__":
     robot = Robot()
-    markers = [
-        Object(
-            0,
-            ObjectType.ARUCO_MARKER,
-            {
-                Direction.T: 1,
-                Direction.B: None,
-                Direction.R: None,
-                Direction.L: None,
-            },
-        ),
-        Object(
-            1,
-            ObjectType.ARUCO_MARKER,
-            {
-                Direction.T: 2,
-                Direction.B: 0,
-                Direction.R: None,
-                Direction.L: None,
-            },
-        ),
-        Object(
-            2,
-            ObjectType.ARUCO_MARKER,
-            {
-                Direction.T: None,
-                Direction.B: 0,
-                Direction.R: 3,
-                Direction.L: None,
-            },
-        ),
-    ]
+    markers = JSONToMarkers(
+        [
+            [None, "A6", None],
+            [None, "A5", None],
+            ["A4", "A2", "A3"],
+            [None, "A1", None],
+            [None, "A0", None],
+        ]
+    )
     robot.detector = ArucoDetector(
         aruco_dict_type=cv2.aruco.DICT_4X4_50,
         marker_size=0.15,

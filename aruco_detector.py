@@ -75,7 +75,7 @@ class Object:
     id: int
     neighbour: Dict[Direction, int] = {}
 
-    def __init__(self, id, ObjectType, neighbour):
+    def __init__(self, id, ObjectType, neighbour=None):
         self.id = id
         self.Type = ObjectType
         self.neighbour = neighbour
