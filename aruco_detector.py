@@ -84,6 +84,9 @@ class Object:
         return self.id == other.id and self.Type == other.Type
 
 
+stopping = False
+
+
 class ArucoDetector:
     thread: threading.Thread = None
     controller: Controller
@@ -176,6 +179,11 @@ class ArucoDetector:
         return nearest.id, nearest.z, direction
 
     def CurrentTask(self, distance: float):
+        global stopping
+        if stopping:
+            self.controller.Stop()
+            return
+
         if self.current_position is None:
             return
 
@@ -194,6 +202,7 @@ class ArucoDetector:
             elif self.current_position.neighbour[L] == next_id:
                 self.controller.TurnLeft()
             elif self.current_position.neighbour[R] == next_id:
+                stopping = True
                 self.controller.TurnRight()
             elif self.current_position.neighbour[B] == next_id:
                 self.controller.Turn180()
@@ -211,7 +220,7 @@ class ArucoDetector:
         if aruco_marker is not None and dir is not None:
             current_id = aruco_marker.neighbour[dir]
             # print("id ", id, "dis ", dis, "dir ", dir)
-            # print("current ", current_id)
+            print("current ", current_id)
             for marker in self.marker_list:
                 if marker.id == current_id:
                     self.current_position = marker
