@@ -12,7 +12,7 @@ def JSONToMarkers(data: list[list[str]]) -> list[Object]:
                 objtype = ObjectType.ARUCO_MARKER
             id = None
             if len(obj) > 1:
-                id = obj[1:]
+                id = int(obj[1:])
 
             Ti = i - 1
             Tj = j

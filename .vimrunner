@@ -1,1 +1,1 @@
-uv run ./robot.py
+DEV=true uv run ./robot.py
