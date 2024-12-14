@@ -189,7 +189,7 @@ class ArucoDetector:
 
         n = distance - 37
         print("distance", n)
-        if abs(n) < 1:
+        if abs(n) < 3:
             print("Exactly at", self.current_position.id)
             self.controller.Stop()
             next_id_index = self.routes.index(self.current_position.id) + 1
