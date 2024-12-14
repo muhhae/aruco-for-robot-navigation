@@ -205,13 +205,13 @@ class ArucoDetector:
         self.current_position = None
         for e in self.marker_list:
             if e.id == id and e.Type == ObjectType.ARUCO_MARKER:
-                print("masuk")
+                # print("masuk")
                 aruco_marker = e
                 break
         if aruco_marker is not None and dir is not None:
             current_id = aruco_marker.neighbour[dir]
-            print("id ", id, "dis ", dis, "dir ", dir)
-            print("current ", current_id)
+            # print("id ", id, "dis ", dis, "dir ", dir)
+            # print("current ", current_id)
             for marker in self.marker_list:
                 if marker.id == current_id:
                     self.current_position = marker
