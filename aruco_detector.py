@@ -127,6 +127,7 @@ class ArucoDetector:
             Direction.R: Direction.B,
         },
     }
+    x = 0
 
     def __init__(
         self,
@@ -149,7 +150,7 @@ class ArucoDetector:
         self.marker_size = marker_size
         self.z_offset = z_offset
         self.marker_list = marker_list
-        self.state = RobotState.STOP
+        self.state = RobotState.RUNNING
         self.current_position = None
         self.controller = controller
 
@@ -163,6 +164,7 @@ class ArucoDetector:
                 nearest = e
 
         direction = None
+        self.x = nearest.x
         if abs(nearest.z_rot - 180) < 20 or abs(nearest.z_rot - (-180)) < 20:
             direction = Direction.T
             self.orientation = Direction.B
@@ -183,13 +185,22 @@ class ArucoDetector:
             self.controller.Stop()
             return
 
+        # print("X", self.x)
+
+        if self.x > 3:
+            self.controller.PivotRight()
+            return
+        elif self.x < -3:
+            self.controller.PivotLeft()
+            return
+
         if self.current_position is None:
             return
 
         n = distance - 37
-        print("distance", n)
+        # print("distance", n)
         if abs(n) < 3:
-            print("Exactly at", self.current_position.id)
+            # print("Exactly at", self.current_position.id)
             self.controller.Stop()
             next_id_index = self.routes.index(self.current_position.id) + 1
             next_id = self.routes[next_id_index]
@@ -220,7 +231,7 @@ class ArucoDetector:
         if aruco_marker is not None and dir is not None:
             current_id = aruco_marker.neighbour[dir]
             # print("id ", id, "dis ", dis, "dir ", dir)
-            print("current ", current_id)
+            # print("current ", current_id)
             for marker in self.marker_list:
                 if marker.id == current_id:
                     self.current_position = marker

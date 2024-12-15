@@ -12,15 +12,15 @@ class Controller(controller.Controller):
                 "pwm2": 13,
                 "enb1": 5,
                 "enb2": 6,
-                "enc1" : 23,
-                "enc2" : 24,
+                "enc1": 23,
+                "enc2": 24,
             },
             {
                 "pwm1": 18,
                 "pwm2": 19,
                 "enb1": 20,
-                "enc1" : 5,
-                "enc2" : 6,
+                "enc1": 5,
+                "enc2": 6,
                 "enb2": 21,
             },
         )
@@ -36,6 +36,12 @@ class Controller(controller.Controller):
         self.rc.robot_pivot_left()
 
     def TurnRight(self):
+        self.rc.robot_pivot_right()
+
+    def PivotLeft(self):
+        self.rc.robot_pivot_left()
+
+    def PivotRight(self):
         self.rc.robot_pivot_right()
 
     def Stop(self):

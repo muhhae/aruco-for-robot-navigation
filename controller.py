@@ -11,6 +11,12 @@ class Controller:
     def TurnRight(self):
         print("TurnRight Not Implemented")
 
+    def PivotLeft(self):
+        print("Pivot Left...")
+
+    def PivotRight(self):
+        print("Pivot Rigth...")
+
     def Stop(self):
         print("Stop Not Implemented")
 

@@ -18,6 +18,12 @@ class Controller(controller.Controller):
     def Stop(self):
         print("Stop...")
 
+    def PivotLeft(self):
+        print("Pivot Left...")
+
+    def PivotRight(self):
+        print("Pivot Rigth...")
+
     def Disconnect(self):
         self.Stop()
         print("Disconnect...")
