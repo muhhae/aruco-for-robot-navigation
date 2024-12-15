@@ -5,6 +5,7 @@ import numpy as np
 from typing import Dict
 from controller import Controller
 import threading
+from time import sleep
 
 os.environ["QT_QPA_PLATFORM"] = "xcb"
 camera_calibration_filename = "./calibration_chessboard.yaml"
@@ -58,10 +59,8 @@ class Direction(Enum):
 
 
 class RobotState(Enum):
-    READY = 0
     RUNNING = 1
     STOP = 2
-    FINISH = 3
 
 
 class ObjectType(Enum):
@@ -150,7 +149,7 @@ class ArucoDetector:
         self.marker_size = marker_size
         self.z_offset = z_offset
         self.marker_list = marker_list
-        self.state = RobotState.READY
+        self.state = RobotState.STOP
         self.current_position = None
         self.controller = controller
 
@@ -233,6 +232,7 @@ class ArucoDetector:
     def Stop(self):
         self.thread.join()
         self.thread = None
+        self.controller.Stop()
         self.controller.Disconnect()
 
     def Start(self):
@@ -243,6 +243,11 @@ class ArucoDetector:
 
     def Run(self):
         while 1:
+            if self.state != RobotState.RUNNING:
+                self.controller.Stop()
+                print("waiting for command...")
+                sleep(1)
+                continue
             ret, frame = self.camera.read()
             if not ret or frame is None:
                 print("Something wrong with the camera")

@@ -1,12 +1,13 @@
 import signal
 import cv2
-from aruco_detector import Object, Direction, ObjectType, ArucoDetector
+from aruco_detector import Object, Direction, ArucoDetector
 from util import JSONToMarkers
 
 from broadcaster import Broadcaster
 import asyncio
 import os
 import threading
+from api import RobotAPI
 
 is_dev = os.getenv("DEV", "false").lower() in ("true", "1", "yes")
 if not is_dev:
@@ -60,3 +61,6 @@ if __name__ == "__main__":
     robot.detector.routes = [0, 1, 2, 3]
     robot.broadcaster = Broadcaster()
     asyncio.run(robot.Start())
+    api = RobotAPI(robot.detector)
+    api.Start()
+    print("not blocked")
