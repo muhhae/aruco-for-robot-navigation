@@ -45,7 +45,7 @@ class Controller(controller.Controller):
         self.rc.robot_pivot_right()
 
     def Stop(self):
-        self.rc.robot_stop()
+        self.rc.stop()
 
     def Disconnect(self):
         self.Stop()
