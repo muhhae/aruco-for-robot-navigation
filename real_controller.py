@@ -35,11 +35,11 @@ class Controller(controller.Controller):
 
     def TurnLeft(self):
         self.rc.robot_pivot_left()
-        sleep(2.1)
+        sleep(1)
 
     def TurnRight(self):
         self.rc.robot_pivot_right()
-        sleep(2.1)
+        sleep(1)
 
     def PivotLeft(self):
         self.rc.robot_pivot_left(10)
