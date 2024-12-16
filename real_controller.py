@@ -32,16 +32,19 @@ class Controller(controller.Controller):
     def Turn180(self):
         self.TurnLeft()
         self.TurnLeft()
+        print("Stop 180")
 
     def TurnLeft(self):
         self.rc.robot_pivot_left()
         sleep(1)
         self.rc.stop()
+        print("Stop Left")
 
     def TurnRight(self):
         self.rc.robot_pivot_right()
         sleep(1)
         self.rc.stop()
+        print("Stop Left")
 
     def PivotLeft(self):
         self.rc.robot_pivot_left(10)
