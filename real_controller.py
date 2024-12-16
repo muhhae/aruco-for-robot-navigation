@@ -39,10 +39,10 @@ class Controller(controller.Controller):
         self.rc.robot_pivot_right()
 
     def PivotLeft(self):
-        self.rc.robot_pivot_left()
+        self.rc.robot_pivot_left(10)
 
     def PivotRight(self):
-        self.rc.robot_pivot_right()
+        self.rc.robot_pivot_right(10)
 
     def Stop(self):
         self.rc.stop()

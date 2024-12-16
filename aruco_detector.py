@@ -185,7 +185,7 @@ class ArucoDetector:
             self.controller.Stop()
             return
 
-        # print("X", self.x)
+        print("X", self.x)
 
         if self.x > 3:
             self.controller.PivotRight()
@@ -198,7 +198,7 @@ class ArucoDetector:
             return
 
         n = distance - 37
-        # print("distance", n)
+        print("distance", n)
         if abs(n) < 3:
             # print("Exactly at", self.current_position.id)
             self.controller.Stop()
