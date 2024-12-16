@@ -36,14 +36,14 @@ class Controller(controller.Controller):
 
     def TurnLeft(self):
         self.rc.robot_pivot_left()
-        for i in range(10000):
-            print("in left pivot motion...")
+        print("in left pivot motion...")
+        sleep(0.5)
         self.rc.stop()
 
     def TurnRight(self):
         self.rc.robot_pivot_right()
-        for i in range(10000):
-            print("in right pivot motion...")
+        print("in right pivot motion...")
+        sleep(0.5)
         self.rc.stop()
 
     def PivotLeft(self):
