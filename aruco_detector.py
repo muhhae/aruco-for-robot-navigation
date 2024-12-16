@@ -218,7 +218,7 @@ class ArucoDetector:
                 self.controller.Stop()
             elif self.current_position.neighbour[B] == next_id:
                 self.controller.Turn180()
-                self.controller.Stop
+                self.controller.Stop()
         else:
             self.controller.Forward()
 
