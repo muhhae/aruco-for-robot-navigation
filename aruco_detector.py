@@ -195,6 +195,7 @@ class ArucoDetector:
             return
 
         if self.current_position is None:
+            self.controller.Stop()
             return
 
         n = distance - 37
