@@ -261,7 +261,7 @@ class ArucoDetector:
             if not ret or frame is None:
                 print("Something wrong with the camera")
                 break
-
+            self.current_position = None
             aruco_transforms = self.Detect(frame)
             if aruco_transforms is not None:
                 id, dis, dir = self.GetPosition(aruco_transforms)
