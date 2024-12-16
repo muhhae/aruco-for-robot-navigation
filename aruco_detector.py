@@ -189,9 +189,11 @@ class ArucoDetector:
 
         if self.x > 5:
             self.controller.PivotRight()
+            print("idk 1")
             return
         elif self.x < -5:
             self.controller.PivotLeft()
+            print("idk 2")
             return
 
         if self.current_position is None:
