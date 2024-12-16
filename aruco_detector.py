@@ -150,8 +150,8 @@ class ArucoDetector:
         self.marker_size = marker_size
         self.z_offset = z_offset
         self.marker_list = marker_list
-        self.state = RobotState.RUNNING
-        self.current_position = None
+        self.state = RobotState.STOP
+        self.current_position = Object(0, ObjectType.ARUCO_MARKER)
         self.controller = controller
 
     def GetPosition(

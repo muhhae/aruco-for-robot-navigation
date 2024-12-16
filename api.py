@@ -3,6 +3,7 @@ from aruco_detector import ArucoDetector, RobotState
 import uvicorn
 from pydantic import BaseModel
 from util import JSONToMarkers
+from pathfinding import FindPath
 
 
 class RobotAPI:
@@ -82,6 +83,37 @@ class RobotAPI:
             return {
                 "message": "maps changed",
                 "maps": self.detector.marker_list,
+            }
+
+        class set_targets_r(BaseModel):
+            targets: int
+
+        @self.app.post("/targets/")
+        def set_targets(r: set_targets_r):
+            if self.detector.state != RobotState.STOP:
+                return {"message": "Robot should be stopped first"}
+
+            if self.detector.current_position is None:
+                return {"message": "Robot position is invalid"}
+
+            routes = FindPath(
+                self.detector.marker_list, self.detector.current_position.id, r.targets
+            )
+            if routes is None:
+                return {"message": "No routes can be found"}
+
+            self.detector.routes = routes
+            return {
+                "message": "targets changed",
+                "routes": self.detector.routes,
+                "targets": self.detector.routes[-1],
+            }
+
+        @self.app.get("/targets/")
+        def get_targets():
+            return {
+                "routes": self.detector.routes,
+                "targets": self.detector.routes[-1],
             }
 
     def Start(self):
