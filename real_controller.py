@@ -1,5 +1,6 @@
 import controller
 from ArucoRobotControl.robot import RobotControl as RC
+from time import sleep
 
 
 class Controller(controller.Controller):
@@ -34,9 +35,11 @@ class Controller(controller.Controller):
 
     def TurnLeft(self):
         self.rc.robot_pivot_left()
+        sleep(2.1)
 
     def TurnRight(self):
         self.rc.robot_pivot_right()
+        sleep(2.1)
 
     def PivotLeft(self):
         self.rc.robot_pivot_left(10)

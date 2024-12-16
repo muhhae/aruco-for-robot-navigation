@@ -189,11 +189,9 @@ class ArucoDetector:
 
         if self.x > 5:
             self.controller.PivotRight()
-            print("idk 1")
             return
         elif self.x < -5:
             self.controller.PivotLeft()
-            print("idk 2")
             return
 
         if self.current_position is None:
@@ -214,15 +212,12 @@ class ArucoDetector:
                 self.controller.Forward()
             elif self.current_position.neighbour[L] == next_id:
                 self.controller.TurnLeft()
-                sleep(5)
                 self.controller.Stop()
             elif self.current_position.neighbour[R] == next_id:
                 self.controller.TurnRight()
-                sleep(5)
                 self.controller.Stop()
             elif self.current_position.neighbour[B] == next_id:
                 self.controller.Turn180()
-                sleep(10)
                 self.controller.Stop
         else:
             self.controller.Forward()
