@@ -257,11 +257,6 @@ class ArucoDetector:
 
     def Run(self):
         while 1:
-            if self.state != RobotState.RUNNING:
-                self.controller.Stop()
-                print("waiting for command...")
-                sleep(1)
-                continue
             ret, frame = self.camera.read()
             if not ret or frame is None:
                 print("Something wrong with the camera")
@@ -271,6 +266,11 @@ class ArucoDetector:
             if aruco_transforms is not None:
                 id, dis, dir = self.GetPosition(aruco_transforms)
                 self.ProcessArucoTransform(id, dis, dir)
+                if self.state != RobotState.RUNNING:
+                    self.controller.Stop()
+                    print("waiting for command...")
+                    sleep(1)
+                    continue
                 self.CurrentTask(dis)
             self.frame = frame.copy()
         #     cv2.imshow("copy: ", self.frame)
